@@ -215,12 +215,12 @@
 
       // 計算項目
       const purchaseTotalCost = purchasePrice + purchaseExpenses;
-      const GPI = monthlyIncome * 12;
+      const GPI = monthlyIncome * 12;  // 総潜在収入：満室時の年間収入
       // EGIは、具体的数値が難しい場合、GPIの90%で計算（雑収入も加味）
-      const EGI = GPI * 0.9 + miscIncome;
-      const OPEx = managementFee + fixedTax + buildingMgmtFee;
-      const NOI = EGI - OPEx;
-      // FCR, イールドギャップ計算に使用
+      const EGI = GPI * 0.9 + miscIncome;  // 実効総収入
+      const OPEx = managementFee + fixedTax + buildingMgmtFee;  // 運営費用（管理費＋固都税＋建物管理費）
+      const NOI = EGI - OPEx;  // 純営業収益：EGIからOPExを引いた収益
+      // FCR＝NOI/(物件購入価格＋購入時諸費用)
       const FCR = NOI / (purchasePrice + purchaseExpenses);
 
       // ローンスケジュール作成（保有期間分のシミュレーション）
@@ -251,9 +251,9 @@
         const loan2Payment = loan2Schedule[year-1].payment;
         const loan2InterestYear = loan2Schedule[year-1].interest;
         const loan2Balance = loan2Schedule[year-1].balance;
-        const ADS = loan1Payment + loan2Payment;
+        const ADS = loan1Payment + loan2Payment;  // 元利返済額
         const totalLoanInterest = loan1InterestYear + loan2InterestYear;
-        // BTCFo：税引前キャッシュフロー
+        // BTCFo：税引前キャッシュフロー＝NOI - ADS
         const BTCFo = NOI - ADS;
         // 税計算：課税所得 = NOI - (ローン利息) - 減価償却費（マイナスなら0とする）
         let taxableIncome = NOI - totalLoanInterest - annualDepreciation;
@@ -298,7 +298,7 @@
       const irrBefore = calculateIRR(btcCashFlows);
       const irrAfter = calculateIRR(atcCashFlows);
 
-      // イールドギャップ
+      // イールドギャップ：FCR - ローン定数K
       const yieldGap = FCR - loanConstantK;
 
       // その他の指標：運営売却キャッシュフロー累計（B）＝累計ATCFo, 自己資金倍率＝B/自己資金, 最終想定運用益＝B - 自己資金
@@ -329,16 +329,34 @@
 
       resultHTML += "<h3>主要指標</h3>";
       resultHTML += `<p>購入時総費用：${purchaseTotalCost.toLocaleString()} 円</p>`;
-      resultHTML += `<p>FCR：${(FCR*100).toFixed(2)} %</p>`;
+      resultHTML += `<p>FCR（キャッシュフロー率）：${(FCR*100).toFixed(2)} %</p>`;
       resultHTML += `<p>ローン定数K：${(loanConstantK*100).toFixed(2)} %</p>`;
       resultHTML += `<p>イールドギャップ：${(yieldGap*100).toFixed(2)} %</p>`;
-      resultHTML += `<p>累計BTCFo：${cumulativeBTCFo.toLocaleString()} 円</p>`;
-      resultHTML += `<p>累計ATCFo：${cumulativeATCFo.toLocaleString()} 円</p>`;
+      resultHTML += `<p>累計BTCFo（税引前キャッシュフロー累計）：${cumulativeBTCFo.toLocaleString()} 円</p>`;
+      resultHTML += `<p>累計ATCFo（税引後キャッシュフロー累計）：${cumulativeATCFo.toLocaleString()} 円</p>`;
       resultHTML += `<p>IRR（税引前）：${(irrBefore*100).toFixed(2)} %</p>`;
       resultHTML += `<p>IRR（税引後）：${(irrAfter*100).toFixed(2)} %</p>`;
       resultHTML += `<p>運営売却キャッシュフロー累計（B）：${operatingSaleCF.toLocaleString()} 円</p>`;
       resultHTML += `<p>自己資金倍率（B/A）：${equityMultiplier.toFixed(2)} 倍</p>`;
       resultHTML += `<p>最終想定運用益（B-A）：${finalOperatingProfit.toLocaleString()} 円</p>`;
+
+      // 各指標の意味を説明するセクション
+      resultHTML += "<h3>各指標の意味（用語解説）</h3>";
+      resultHTML += "<ul>";
+      resultHTML += "<li>GPI（総潜在収入）：満室時の年間収入（＝月収×12）</li>";
+      resultHTML += "<li>EGI（実効総収入）：GPIから空室損失・未回収損失を差し引き、雑収入を加えた実際の収入（概ねGPIの90% + 雑収入）</li>";
+      resultHTML += "<li>OPEx（運営費用）：物件の管理費、固都税、建物管理費などの合計</li>";
+      resultHTML += "<li>NOI（純営業収益）：EGIからOPExを差し引いた収益。物件運営の実際の営業利益を示す</li>";
+      resultHTML += "<li>ADS（元利返済額）：ローンの年間返済額（元本＋利息）</li>";
+      resultHTML += "<li>BTCFo（税引前キャッシュフロー）：NOIからADSを引いたキャッシュフロー</li>";
+      resultHTML += "<li>ATCFo（税引後キャッシュフロー）：NOIからADSと税金（21%）を引いたキャッシュフロー</li>";
+      resultHTML += "<li>FCR：NOIを（物件購入価格＋購入時諸費用）で割った割合。物件の収益性を示す指標</li>";
+      resultHTML += "<li>ローン定数K：初年度のローン返済総額を借入総額で割った割合</li>";
+      resultHTML += "<li>イールドギャップ：FCRからローン定数Kを差し引いた値。収益性と返済負担の差を示す</li>";
+      resultHTML += "<li>IRR（内部収益率）：初期投資と各年のキャッシュフロー、さらに売却時の最終キャッシュフローをもとに計算される年率収益率（税引前、税引後の両方）</li>";
+      resultHTML += "<li>自己資金倍率：売却キャッシュフロー累計（B）を自己資金で割った指標。投資効率を示す</li>";
+      resultHTML += "<li>最終想定運用益：売却キャッシュフロー累計（B）から自己資金を差し引いた投資利益</li>";
+      resultHTML += "</ul>";
 
       document.getElementById("results").innerHTML = resultHTML;
     }
