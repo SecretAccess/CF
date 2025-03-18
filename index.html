@@ -108,6 +108,15 @@
   <div id="results"></div>
 
   <script>
+    // ヘルパー関数：小数点以下切り捨て＋コンマ付き文字列に変換
+    function formatNumber(num) {
+      return Math.floor(num).toLocaleString();
+    }
+    // ヘルパー関数：パーセント表示（整数に切り捨て）
+    function formatPercent(num) {
+      return Math.floor(num * 100) + " %";
+    }
+
     // 数値入力欄のフォーマット処理（フォーカス時はカンマ除去、ブラー時にカンマ付与）
     document.addEventListener("DOMContentLoaded", function() {
       const numberInputs = document.querySelectorAll('.number-format');
@@ -118,7 +127,7 @@
         input.addEventListener('blur', function(e) {
           let value = input.value.replace(/,/g, '');
           if(value === "" || isNaN(value)) return;
-          input.value = Number(value).toLocaleString();
+          input.value = formatNumber(Number(value));
         });
       });
     });
@@ -317,21 +326,21 @@
       };
       
       resultsArray.forEach(r => {
-        tableData["GPI（総潜在収入）"].push(r.GPI.toLocaleString());
-        tableData["EGI（実効総収入）"].push(r.EGI.toLocaleString());
-        tableData["OPEx（運営費用）"].push(r.OPEx.toLocaleString());
-        tableData["NOI（純営業収益）"].push(r.NOI.toLocaleString());
-        tableData["ADS（元利返済額）"].push(r.ADS.toLocaleString());
-        tableData["BTCFo（税引前CF）"].push(r.BTCFo.toLocaleString());
-        tableData["税金"].push(r.tax.toLocaleString());
-        tableData["ATCFo（税引後CF）"].push(r.ATCFo.toLocaleString());
-        tableData["累計ATCFo（税引後CF累計）"].push(r.cumulativeATCFo.toLocaleString());
-        tableData["残ローン残高（合計）"].push(r.loanBalance.toLocaleString());
+        tableData["GPI（総潜在収入）"].push(formatNumber(r.GPI));
+        tableData["EGI（実効総収入）"].push(formatNumber(r.EGI));
+        tableData["OPEx（運営費用）"].push(formatNumber(r.OPEx));
+        tableData["NOI（純営業収益）"].push(formatNumber(r.NOI));
+        tableData["ADS（元利返済額）"].push(formatNumber(r.ADS));
+        tableData["BTCFo（税引前CF）"].push(formatNumber(r.BTCFo));
+        tableData["税金"].push(formatNumber(r.tax));
+        tableData["ATCFo（税引後CF）"].push(formatNumber(r.ATCFo));
+        tableData["累計ATCFo（税引後CF累計）"].push(formatNumber(r.cumulativeATCFo));
+        tableData["残ローン残高（合計）"].push(formatNumber(r.loanBalance));
       });
       
-      let equityRow = Array(holdingPeriod).fill(equity.toLocaleString());
-      let equityMultiplierRow = resultsArray.map(r => (r.cumulativeATCFo / equity).toFixed(2));
-      let finalOperatingProfitRow = resultsArray.map(r => (r.cumulativeATCFo - equity).toLocaleString());
+      let equityRow = Array(holdingPeriod).fill(formatNumber(equity));
+      let equityMultiplierRow = resultsArray.map(r => Math.floor(r.cumulativeATCFo / equity).toString());
+      let finalOperatingProfitRow = resultsArray.map(r => formatNumber(r.cumulativeATCFo - equity));
       
       let tableHTML = "<h2>年次シミュレーション結果</h2>";
       tableHTML += "<table>";
@@ -376,11 +385,11 @@
       tableHTML += "</table>";
       
       let summaryHTML = "<h3>主要指標</h3>";
-      summaryHTML += `<p>FCR（キャッシュフロー率）：${(FCR * 100).toFixed(2)} %</p>`;
-      summaryHTML += `<p>ローン定数K：${(loanConstantK * 100).toFixed(2)} %</p>`;
-      summaryHTML += `<p>イールドギャップ：${(yieldGap * 100).toFixed(2)} %</p>`;
-      summaryHTML += `<p>IRR（税引前）：${(irrBefore * 100).toFixed(2)} %</p>`;
-      summaryHTML += `<p>IRR（税引後）：${(irrAfter * 100).toFixed(2)} %</p>`;
+      summaryHTML += `<p>FCR（キャッシュフロー率）：${formatPercent(FCR)}</p>`;
+      summaryHTML += `<p>ローン定数K：${formatPercent(loanConstantK)}</p>`;
+      summaryHTML += `<p>イールドギャップ：${formatPercent(yieldGap)}</p>`;
+      summaryHTML += `<p>IRR（税引前）：${Math.floor(irrBefore * 100)} %</p>`;
+      summaryHTML += `<p>IRR（税引後）：${Math.floor(irrAfter * 100)} %</p>`;
       
       let glossaryHTML = "<h3>各指標の意味（用語解説）</h3><ul>";
       glossaryHTML += "<li>GPI（総潜在収入）：満室時の年間収入（＝月収×12）</li>";
