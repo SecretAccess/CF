@@ -7,10 +7,12 @@
     body { font-family: sans-serif; margin: 20px; }
     h2 { margin-top: 30px; }
     label { display: inline-block; width: 200px; margin-bottom: 5px; }
-    input { margin-bottom: 5px; }
+    input, select { margin-bottom: 5px; }
     .section { border: 1px solid #ccc; padding: 10px; margin-bottom: 20px; }
     table { border-collapse: collapse; margin-top: 20px; }
-    table, th, td { border: 1px solid #aaa; padding: 5px; }
+    table, th, td { border: 1px solid #aaa; padding: 5px; text-align: right; }
+    th { background-color: #f0f0f0; }
+    td:first-child, th:first-child { text-align: left; }
   </style>
 </head>
 <body>
@@ -76,7 +78,7 @@
       <h2>【税金・減価償却】</h2>
       <label>年間減価償却費:</label>
       <input type="number" id="annualDepreciation" value="1000000"><br>
-      <label>税率（所得税・住民税） (%):</label>
+      <label>税率（所得税・住民税, %）:</label>
       <input type="number" id="taxRate" value="21" step="0.1"><br>
       <label>譲渡所得税率 (%):</label>
       <input type="number" id="capitalGainsTaxRate" value="15" step="0.1"><br>
@@ -113,13 +115,12 @@
       annualRate = annualRate / 100;
       if(loanAmount <= 0) {
         // 借入金がなければ、各年ゼロで返す
-        for(let y=1; y<=simYears; y++){
+        for(let y = 1; y <= simYears; y++){
           schedule.push({year: y, payment: 0, interest: 0, principal: 0, balance: 0});
         }
         return schedule;
       }
       if(loanType === "均等") {
-        // 元利均等返済：固定返済額（シンプルに年単位で計算）
         let r = annualRate;
         let n = term;
         let payment = loanAmount * (r * Math.pow(1+r, n)) / (Math.pow(1+r, n) - 1);
@@ -135,7 +136,6 @@
           }
         }
       } else if(loanType === "均等元金") {
-        // 元金均等返済：毎年元金は一定
         let n = term;
         let principalPayment = loanAmount / n;
         for(let y = 1; y <= simYears; y++){
@@ -154,37 +154,32 @@
     }
 
     // IRR計算（ニュートン法）
-    function calculateIRR(cashFlows, guess=0.1) {
+    function calculateIRR(cashFlows, guess = 0.1) {
       const tol = 1e-6;
       const maxIter = 1000;
       let rate = guess;
-      for(let iter = 0; iter < maxIter; iter++){
-        let npv = 0;
-        let d_npv = 0;
-        for(let t = 0; t < cashFlows.length; t++){
-          npv += cashFlows[t] / Math.pow(1+rate, t);
-          if(t > 0){
-            d_npv -= t * cashFlows[t] / Math.pow(1+rate, t+1);
+      for (let iter = 0; iter < maxIter; iter++) {
+        let npv = 0, d_npv = 0;
+        for (let t = 0; t < cashFlows.length; t++) {
+          npv += cashFlows[t] / Math.pow(1 + rate, t);
+          if (t > 0) {
+            d_npv -= t * cashFlows[t] / Math.pow(1 + rate, t + 1);
           }
         }
-        let newRate = rate - npv/d_npv;
-        if(Math.abs(newRate - rate) < tol) {
-          return newRate;
-        }
+        let newRate = rate - npv / d_npv;
+        if (Math.abs(newRate - rate) < tol) return newRate;
         rate = newRate;
       }
       return rate;
     }
 
     function calculateSimulation() {
-      // 入力値を取得
-      const buildingAge = Number(document.getElementById("buildingAge").value);
+      // 入力値の取得
       const purchasePrice = Number(document.getElementById("purchasePrice").value);
       const monthlyIncome = Number(document.getElementById("monthlyIncome").value);
       const purchaseExpenses = Number(document.getElementById("purchaseExpenses").value);
       const equity = Number(document.getElementById("equity").value);
       const holdingPeriod = Number(document.getElementById("holdingPeriod").value);
-      const discountRate = Number(document.getElementById("discountRate").value) / 100;
 
       // 第1ローン
       const loan1Amount = Number(document.getElementById("loan1Amount").value);
@@ -197,7 +192,7 @@
       const loan2Term = Number(document.getElementById("loan2Term").value);
       const loan2Type = document.getElementById("loan2Type").value;
 
-      // 運営費用
+      // 運営費用・雑収入
       const managementFee = Number(document.getElementById("managementFee").value);
       const fixedTax = Number(document.getElementById("fixedTax").value);
       const buildingMgmtFee = Number(document.getElementById("buildingMgmtFee").value);
@@ -206,63 +201,52 @@
       // 税・減価償却
       const annualDepreciation = Number(document.getElementById("annualDepreciation").value);
       const taxRate = Number(document.getElementById("taxRate").value) / 100;
-      const capitalGainsTaxRate = Number(document.getElementById("capitalGainsTaxRate").value) / 100;
-      const landLoanRatio = Number(document.getElementById("landLoanRatio").value) / 100;
 
       // 売却時
       const salePrice = Number(document.getElementById("salePrice").value);
       const saleExpenses = Number(document.getElementById("saleExpenses").value);
 
       // 計算項目
-      const purchaseTotalCost = purchasePrice + purchaseExpenses;
       const GPI = monthlyIncome * 12;  // 総潜在収入：満室時の年間収入
-      // EGIは、具体的数値が難しい場合、GPIの90%で計算（雑収入も加味）
       const EGI = GPI * 0.9 + miscIncome;  // 実効総収入
-      const OPEx = managementFee + fixedTax + buildingMgmtFee;  // 運営費用（管理費＋固都税＋建物管理費）
-      const NOI = EGI - OPEx;  // 純営業収益：EGIからOPExを引いた収益
-      // FCR＝NOI/(物件購入価格＋購入時諸費用)
-      const FCR = NOI / (purchasePrice + purchaseExpenses);
+      const OPEx = managementFee + fixedTax + buildingMgmtFee;  // 運営費用
+      const NOI = EGI - OPEx;  // 純営業収益
+      const FCR = NOI / (purchasePrice + purchaseExpenses);  // キャッシュフロー率
 
-      // ローンスケジュール作成（保有期間分のシミュレーション）
+      // ローンスケジュール作成
       const loan1Schedule = calculateLoanSchedule(loan1Amount, loan1Interest, loan1Term, loan1Type, holdingPeriod);
       const loan2Schedule = calculateLoanSchedule(loan2Amount, loan2Interest, loan2Term, loan2Type, holdingPeriod);
 
-      // ローン定数K：第1年目の合計返済額 / (loan1Amount+loan2Amount)
+      // ローン定数K：初年度合計返済額／（第1＋第2ローンの借入総額）
       let totalLoan = loan1Amount + loan2Amount;
-      let firstYearPayment = 0;
-      if(holdingPeriod >= 1) {
-        firstYearPayment = (loan1Schedule[0].payment || 0) + (loan2Schedule[0].payment || 0);
-      }
+      let firstYearPayment = (holdingPeriod >= 1) ? (loan1Schedule[0].payment + loan2Schedule[0].payment) : 0;
       const loanConstantK = totalLoan > 0 ? firstYearPayment / totalLoan : 0;
 
-      // シミュレーション：各年ごとに計算
-      let cumulativeBTCFo = 0;
-      let cumulativeATCFo = 0;
+      // 各年ごとのシミュレーション結果
       let resultsArray = [];
-      // キャッシュフロー配列（IRR計算用）：初期投資は（購入総費用 - 借入額）＝ equity とする
+      // キャッシュフロー配列（IRR計算用）
       let btcCashFlows = [-equity];
       let atcCashFlows = [-equity];
 
-      for(let year = 1; year <= holdingPeriod; year++){
+      let cumulativeBTCFo = 0;
+      let cumulativeATCFo = 0;
+
+      for (let year = 1; year <= holdingPeriod; year++) {
         // 各年のローン返済
-        const loan1Payment = loan1Schedule[year-1].payment;
-        const loan1InterestYear = loan1Schedule[year-1].interest;
-        const loan1Balance = loan1Schedule[year-1].balance;
-        const loan2Payment = loan2Schedule[year-1].payment;
-        const loan2InterestYear = loan2Schedule[year-1].interest;
-        const loan2Balance = loan2Schedule[year-1].balance;
-        const ADS = loan1Payment + loan2Payment;  // 元利返済額
-        const totalLoanInterest = loan1InterestYear + loan2InterestYear;
-        // BTCFo：税引前キャッシュフロー＝NOI - ADS
-        const BTCFo = NOI - ADS;
-        // 税計算：課税所得 = NOI - (ローン利息) - 減価償却費（マイナスなら0とする）
+        const l1 = loan1Schedule[year - 1];
+        const l2 = loan2Schedule[year - 1];
+        const ADS = l1.payment + l2.payment;  // 元利返済額
+        const totalLoanInterest = l1.interest + l2.interest;
+
+        const BTCFo = NOI - ADS;  // 税引前キャッシュフロー
         let taxableIncome = NOI - totalLoanInterest - annualDepreciation;
-        if(taxableIncome < 0) taxableIncome = 0;
+        if (taxableIncome < 0) taxableIncome = 0;
         const tax = taxableIncome * taxRate;
-        // ATCFo：税引後キャッシュフロー
-        const ATCFo = NOI - ADS - tax;
+        const ATCFo = NOI - ADS - tax;  // 税引後キャッシュフロー
+
         cumulativeBTCFo += BTCFo;
         cumulativeATCFo += ATCFo;
+
         resultsArray.push({
           year: year,
           GPI: GPI,
@@ -271,29 +255,25 @@
           NOI: NOI,
           ADS: ADS,
           BTCFo: BTCFo,
-          loanInterest: totalLoanInterest,
           tax: tax,
           ATCFo: ATCFo,
-          cumulativeBTCFo: cumulativeBTCFo,
           cumulativeATCFo: cumulativeATCFo,
-          loan1Balance: loan1Balance,
-          loan2Balance: loan2Balance
+          loanBalance: l1.balance + l2.balance
         });
         btcCashFlows.push(BTCFo);
         atcCashFlows.push(ATCFo);
       }
 
-      // 売却時のキャッシュフロー（最終年に加算）
-      const remainingLoanBalance = loan1Schedule[holdingPeriod-1].balance + loan2Schedule[holdingPeriod-1].balance;
+      // 売却時の処理：最終年に売却キャッシュフローを加算
+      const remainingLoanBalance = loan1Schedule[holdingPeriod - 1].balance + loan2Schedule[holdingPeriod - 1].balance;
       const saleNet = salePrice - saleExpenses - remainingLoanBalance;
-      // 最終年に売却分を加算
-      resultsArray[holdingPeriod-1].BTCFo += saleNet;
-      resultsArray[holdingPeriod-1].ATCFo += saleNet;
+      resultsArray[holdingPeriod - 1].BTCFo += saleNet;
+      resultsArray[holdingPeriod - 1].ATCFo += saleNet;
       cumulativeBTCFo += saleNet;
       cumulativeATCFo += saleNet;
-      btcCashFlows[btcCashFlows.length-1] += saleNet;
-      atcCashFlows[atcCashFlows.length-1] += saleNet;
-
+      btcCashFlows[btcCashFlows.length - 1] += saleNet;
+      atcCashFlows[atcCashFlows.length - 1] += saleNet;
+      
       // IRR計算
       const irrBefore = calculateIRR(btcCashFlows);
       const irrAfter = calculateIRR(atcCashFlows);
@@ -301,64 +281,126 @@
       // イールドギャップ：FCR - ローン定数K
       const yieldGap = FCR - loanConstantK;
 
-      // その他の指標：運営売却キャッシュフロー累計（B）＝累計ATCFo, 自己資金倍率＝B/自己資金, 最終想定運用益＝B - 自己資金
-      const operatingSaleCF = cumulativeATCFo;
-      const equityMultiplier = equity !== 0 ? operatingSaleCF / equity : 0;
-      const finalOperatingProfit = operatingSaleCF - equity;
-
-      // 結果の表示
-      let resultHTML = "<h2>シミュレーション結果</h2>";
-      resultHTML += "<table><tr><th>年</th><th>GPI</th><th>EGI</th><th>OPEx</th><th>NOI</th><th>ADS</th><th>BTCFo</th><th>税金</th><th>ATCFo</th><th>累計ATCFo</th><th>残ローン残高（合計）</th></tr>";
-      resultsArray.forEach(row => {
-        let totalLoanBalance = row.loan1Balance + row.loan2Balance;
-        resultHTML += `<tr>
-          <td>${row.year}</td>
-          <td>${row.GPI.toFixed(0)}</td>
-          <td>${row.EGI.toFixed(0)}</td>
-          <td>${row.OPEx.toFixed(0)}</td>
-          <td>${row.NOI.toFixed(0)}</td>
-          <td>${row.ADS.toFixed(0)}</td>
-          <td>${row.BTCFo.toFixed(0)}</td>
-          <td>${row.tax.toFixed(0)}</td>
-          <td>${row.ATCFo.toFixed(0)}</td>
-          <td>${row.cumulativeATCFo.toFixed(0)}</td>
-          <td>${totalLoanBalance.toFixed(0)}</td>
-        </tr>`;
+      // 表示用の転置テーブル作成
+      // 各指標ごとに行を用意（結果は小数点以下2桁で表示）
+      const metricLabels = [
+        "GPI（総潜在収入）",
+        "EGI（実効総収入）",
+        "OPEx（運営費用）",
+        "NOI（純営業収益）",
+        "ADS（元利返済額）",
+        "BTCFo（税引前CF）",
+        "税金",
+        "ATCFo（税引後CF）",
+        "累計ATCFo（税引後CF累計）",
+        "残ローン残高（合計）"
+      ];
+      
+      // 各項目の各年の値を配列で作成
+      let tableData = {
+        "GPI（総潜在収入）": [],
+        "EGI（実効総収入）": [],
+        "OPEx（運営費用）": [],
+        "NOI（純営業収益）": [],
+        "ADS（元利返済額）": [],
+        "BTCFo（税引前CF）": [],
+        "税金": [],
+        "ATCFo（税引後CF）": [],
+        "累計ATCFo（税引後CF累計）": [],
+        "残ローン残高（合計）": []
+      };
+      
+      resultsArray.forEach(r => {
+        tableData["GPI（総潜在収入）"].push(r.GPI.toFixed(0));
+        tableData["EGI（実効総収入）"].push(r.EGI.toFixed(0));
+        tableData["OPEx（運営費用）"].push(r.OPEx.toFixed(0));
+        tableData["NOI（純営業収益）"].push(r.NOI.toFixed(0));
+        tableData["ADS（元利返済額）"].push(r.ADS.toFixed(0));
+        tableData["BTCFo（税引前CF）"].push(r.BTCFo.toFixed(0));
+        tableData["税金"].push(r.tax.toFixed(0));
+        tableData["ATCFo（税引後CF）"].push(r.ATCFo.toFixed(0));
+        tableData["累計ATCFo（税引後CF累計）"].push(r.cumulativeATCFo.toFixed(0));
+        tableData["残ローン残高（合計）"].push(r.loanBalance.toFixed(0));
       });
-      resultHTML += "</table>";
-
-      resultHTML += "<h3>主要指標</h3>";
-      resultHTML += `<p>購入時総費用：${purchaseTotalCost.toLocaleString()} 円</p>`;
-      resultHTML += `<p>FCR（キャッシュフロー率）：${(FCR*100).toFixed(2)} %</p>`;
-      resultHTML += `<p>ローン定数K：${(loanConstantK*100).toFixed(2)} %</p>`;
-      resultHTML += `<p>イールドギャップ：${(yieldGap*100).toFixed(2)} %</p>`;
-      resultHTML += `<p>累計BTCFo（税引前キャッシュフロー累計）：${cumulativeBTCFo.toLocaleString()} 円</p>`;
-      resultHTML += `<p>累計ATCFo（税引後キャッシュフロー累計）：${cumulativeATCFo.toLocaleString()} 円</p>`;
-      resultHTML += `<p>IRR（税引前）：${(irrBefore*100).toFixed(2)} %</p>`;
-      resultHTML += `<p>IRR（税引後）：${(irrAfter*100).toFixed(2)} %</p>`;
-      resultHTML += `<p>運営売却キャッシュフロー累計（B）：${operatingSaleCF.toLocaleString()} 円</p>`;
-      resultHTML += `<p>自己資金倍率（B/A）：${equityMultiplier.toFixed(2)} 倍</p>`;
-      resultHTML += `<p>最終想定運用益（B-A）：${finalOperatingProfit.toLocaleString()} 円</p>`;
-
-      // 各指標の意味を説明するセクション
-      resultHTML += "<h3>各指標の意味（用語解説）</h3>";
-      resultHTML += "<ul>";
-      resultHTML += "<li>GPI（総潜在収入）：満室時の年間収入（＝月収×12）</li>";
-      resultHTML += "<li>EGI（実効総収入）：GPIから空室損失・未回収損失を差し引き、雑収入を加えた実際の収入（概ねGPIの90% + 雑収入）</li>";
-      resultHTML += "<li>OPEx（運営費用）：物件の管理費、固都税、建物管理費などの合計</li>";
-      resultHTML += "<li>NOI（純営業収益）：EGIからOPExを差し引いた収益。物件運営の実際の営業利益を示す</li>";
-      resultHTML += "<li>ADS（元利返済額）：ローンの年間返済額（元本＋利息）</li>";
-      resultHTML += "<li>BTCFo（税引前キャッシュフロー）：NOIからADSを引いたキャッシュフロー</li>";
-      resultHTML += "<li>ATCFo（税引後キャッシュフロー）：NOIからADSと税金（21%）を引いたキャッシュフロー</li>";
-      resultHTML += "<li>FCR：NOIを（物件購入価格＋購入時諸費用）で割った割合。物件の収益性を示す指標</li>";
-      resultHTML += "<li>ローン定数K：初年度のローン返済総額を借入総額で割った割合</li>";
-      resultHTML += "<li>イールドギャップ：FCRからローン定数Kを差し引いた値。収益性と返済負担の差を示す</li>";
-      resultHTML += "<li>IRR（内部収益率）：初期投資と各年のキャッシュフロー、さらに売却時の最終キャッシュフローをもとに計算される年率収益率（税引前、税引後の両方）</li>";
-      resultHTML += "<li>自己資金倍率：売却キャッシュフロー累計（B）を自己資金で割った指標。投資効率を示す</li>";
-      resultHTML += "<li>最終想定運用益：売却キャッシュフロー累計（B）から自己資金を差し引いた投資利益</li>";
-      resultHTML += "</ul>";
-
-      document.getElementById("results").innerHTML = resultHTML;
+      
+      // 追加で、運営売却キャッシュフロー累計（B）は累計ATCFo、自己資金（A）は equity、
+      // 自己資金倍率（B/A）と最終想定運用益（B-A）を各年ごとに算出
+      let equityRow = Array(holdingPeriod).fill(equity.toFixed(0));
+      let equityMultiplierRow = resultsArray.map(r => (r.cumulativeATCFo / equity).toFixed(2));
+      let finalOperatingProfitRow = resultsArray.map(r => (r.cumulativeATCFo - equity).toFixed(0));
+      
+      // 転置テーブルHTML作成
+      let tableHTML = "<h2>年次シミュレーション結果</h2>";
+      tableHTML += "<table>";
+      // ヘッダー行（項目名＋各年）
+      tableHTML += "<tr><th>項目</th>";
+      for (let year = 1; year <= holdingPeriod; year++) {
+        tableHTML += `<th>${year}年目</th>`;
+      }
+      tableHTML += "</tr>";
+      
+      // 各項目の行作成
+      metricLabels.forEach(label => {
+        tableHTML += `<tr><td>${label}</td>`;
+        tableData[label].forEach(val => {
+          tableHTML += `<td>${val}</td>`;
+        });
+        tableHTML += "</tr>";
+      });
+      
+      // 追加の計算項目
+      tableHTML += `<tr><td>運営売却キャッシュフロー累計（B）</td>`;
+      tableData["累計ATCFo（税引後CF累計）"].forEach(val => {
+        tableHTML += `<td>${val}</td>`;
+      });
+      tableHTML += "</tr>";
+      
+      tableHTML += `<tr><td>自己資金（A）</td>`;
+      equityRow.forEach(val => {
+        tableHTML += `<td>${val}</td>`;
+      });
+      tableHTML += "</tr>";
+      
+      tableHTML += `<tr><td>自己資金倍率（B/A）</td>`;
+      equityMultiplierRow.forEach(val => {
+        tableHTML += `<td>${val} 倍</td>`;
+      });
+      tableHTML += "</tr>";
+      
+      tableHTML += `<tr><td>最終想定運用益（B-A）</td>`;
+      finalOperatingProfitRow.forEach(val => {
+        tableHTML += `<td>${val} 円</td>`;
+      });
+      tableHTML += "</tr>";
+      
+      tableHTML += "</table>";
+      
+      // 主要指標の表示（IRR等）
+      let summaryHTML = "<h3>主要指標</h3>";
+      summaryHTML += `<p>FCR（キャッシュフロー率）：${(FCR * 100).toFixed(2)} %</p>`;
+      summaryHTML += `<p>ローン定数K：${(loanConstantK * 100).toFixed(2)} %</p>`;
+      summaryHTML += `<p>イールドギャップ：${(yieldGap * 100).toFixed(2)} %</p>`;
+      summaryHTML += `<p>IRR（税引前）：${(irrBefore * 100).toFixed(2)} %</p>`;
+      summaryHTML += `<p>IRR（税引後）：${(irrAfter * 100).toFixed(2)} %</p>`;
+      
+      // 用語解説
+      let glossaryHTML = "<h3>各指標の意味（用語解説）</h3><ul>";
+      glossaryHTML += "<li>GPI（総潜在収入）：満室時の年間収入（＝月収×12）</li>";
+      glossaryHTML += "<li>EGI（実効総収入）：GPIから空室損失・未回収損失を差し引き、雑収入を加えた実際の収入（概ねGPIの90% + 雑収入）</li>";
+      glossaryHTML += "<li>OPEx（運営費用）：管理費、固都税、建物管理費などの合計</li>";
+      glossaryHTML += "<li>NOI（純営業収益）：EGIからOPExを差し引いた収益</li>";
+      glossaryHTML += "<li>ADS（元利返済額）：ローン返済額（元本＋利息）</li>";
+      glossaryHTML += "<li>BTCFo（税引前CF）：NOIからADSを差し引いたキャッシュフロー</li>";
+      glossaryHTML += "<li>ATCFo（税引後CF）：NOIからADSと税金（21%）を差し引いたキャッシュフロー</li>";
+      glossaryHTML += "<li>累計ATCFo：各年のATCFoを累積した値</li>";
+      glossaryHTML += "<li>残ローン残高：各年末時点のローン残高合計</li>";
+      glossaryHTML += "<li>運営売却キャッシュフロー累計（B）：累計ATCFoのこと</li>";
+      glossaryHTML += "<li>自己資金（A）：初期の自己資金</li>";
+      glossaryHTML += "<li>自己資金倍率（B/A）：累計ATCFoを自己資金で割った値</li>";
+      glossaryHTML += "<li>最終想定運用益（B-A）：累計ATCFoから自己資金を差し引いた値</li>";
+      glossaryHTML += "</ul>";
+      
+      document.getElementById("results").innerHTML = tableHTML + summaryHTML + glossaryHTML;
     }
   </script>
 </body>
