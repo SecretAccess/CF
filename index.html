@@ -1,545 +1,705 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <title>高度版 不動産投資シミュレーションツール</title>
-  <style>
-    body { font-family: sans-serif; margin: 20px; }
-    h1, h2, h3 { margin-top: 20px; }
-    label { display: inline-block; width: 250px; margin-bottom: 5px; }
-    input, select { margin-bottom: 5px; width: 140px; }
-    .section {
-      border: 1px solid #ccc;
-      padding: 10px;
-      margin-bottom: 20px;
-      border-radius: 4px;
-    }
-    table { border-collapse: collapse; margin-top: 20px; width: 100%; }
-    table, th, td { border: 1px solid #aaa; padding: 5px; text-align: right; }
-    th { background-color: #f0f0f0; }
-    td:first-child, th:first-child { text-align: left; }
-    .note {
-      font-size: 0.9em;
-      color: #555;
-      margin-top: 5px;
-    }
-    .summary-box {
-      padding: 10px;
-      background-color: #f9f9f9;
-      border-left: 5px solid #0b79bf;
-      margin-bottom: 20px;
-      line-height: 1.6em;
-    }
-    .highlight {
-      font-size: 1.1em;
-      font-weight: bold;
-      color: #333;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>不動産賃貸物件収益シミュレーター</title>
+    <style>
+        :root {
+            --primary-color: #4a6da7;
+            --secondary-color: #8da9db;
+            --accent-color: #304c7a;
+            --background-color: #f7f9fc;
+            --card-color: #ffffff;
+            --text-color: #333333;
+            --border-color: #e0e0e0;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'メイリオ', sans-serif;
+        }
+        
+        body {
+            background-color: var(--background-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        h1, h2, h3 {
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid var(--primary-color);
+        }
+        
+        .card {
+            background-color: var(--card-color);
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .form-section {
+            margin-bottom: 1.5rem;
+        }
+        
+        .form-row {
+            display: flex;
+            flex-wrap: wrap;
+            margin-bottom: 0.5rem;
+        }
+        
+        .form-group {
+            flex: 1;
+            min-width: 200px;
+            margin-right: 15px;
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            background-color: #f9f9f9;
+        }
+        
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+        
+        button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+        
+        button:hover {
+            background-color: var(--accent-color);
+        }
+        
+        .button-container {
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        .result-section {
+            display: none;
+        }
+        
+        .result-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        
+        .result-item {
+            background-color: #f0f5ff;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+        
+        .result-label {
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+        
+        .result-value {
+            font-size: 1.2rem;
+            margin-top: 5px;
+        }
+        
+        .tab-container {
+            margin-top: 20px;
+        }
+        
+        .tab-buttons {
+            display: flex;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .tab-button {
+            background-color: transparent;
+            color: var(--text-color);
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            font-weight: bold;
+            border-bottom: 2px solid transparent;
+        }
+        
+        .tab-button.active {
+            color: var(--primary-color);
+            border-bottom: 2px solid var(--primary-color);
+        }
+        
+        .tab-content {
+            display: none;
+            padding: 20px 0;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        
+        th, td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        th {
+            background-color: var(--secondary-color);
+            color: white;
+        }
+        
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        
+        .chart-container {
+            height: 300px;
+            margin-top: 20px;
+        }
+        
+        .info-icon {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            background-color: var(--primary-color);
+            color: white;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 16px;
+            font-size: 12px;
+            margin-left: 5px;
+            cursor: help;
+        }
+        
+        .tooltip {
+            position: relative;
+            display: inline-block;
+        }
+        
+        .tooltip .tooltip-text {
+            visibility: hidden;
+            width: 200px;
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 5px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            margin-left: -100px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 0.8rem;
+        }
+        
+        .tooltip:hover .tooltip-text {
+            visibility: visible;
+            opacity: 1;
+        }
+    </style>
 </head>
 <body>
-  <h1>高度版 不動産投資シミュレーションツール</h1>
-  <p>
-    ※本ツールは概算モデルです。実際の投資判断や税務計算には専門家への確認が必要です。
-  </p>
-
-  <form id="simForm">
-    <!-- 基本情報 -->
-    <div class="section">
-      <h2>【物件基本情報】</h2>
-      <label>物件購入価格:</label>
-      <input type="text" id="purchasePrice" value="50000000"><br>
-      <label>購入諸費用:</label>
-      <input type="text" id="purchaseExpenses" value="5000000"><br>
-      <label>自己資金（投下資本）:</label>
-      <input type="text" id="equity" value="15000000"><br>
-      <label>土地比率 (%):</label>
-      <input type="text" id="landRatio" value="30" step="0.1">
-      <span class="note">※建物: (100 - 土地比率)%</span><br>
-      <label>購入諸費用のうち建物に計上する割合 (%):</label>
-      <input type="text" id="expenseToBuildingRatio" value="50" step="0.1">
-      <span class="note">※残りは土地諸費用とみなし償却対象外</span><br>
-    </div>
-
-    <!-- ローン情報 -->
-    <div class="section">
-      <h2>【ローン情報】</h2>
-      <label>第1ローン金額:</label>
-      <input type="text" id="loan1Amount" value="25000000"><br>
-      <label>第1ローン返済年数:</label>
-      <input type="text" id="loan1Term" value="25"><br>
-      <label>第1ローン返済方式:</label>
-      <select id="loan1Type">
-        <option value="均等">元利均等</option>
-        <option value="元金均等">元金均等</option>
-      </select><br>
-
-      <label>第2ローン金額（オプション）:</label>
-      <input type="text" id="loan2Amount" value="0"><br>
-      <label>第2ローン返済年数:</label>
-      <input type="text" id="loan2Term" value="0"><br>
-      <label>第2ローン返済方式:</label>
-      <select id="loan2Type">
-        <option value="均等">元利均等</option>
-        <option value="元金均等">元金均等</option>
-      </select><br>
-
-      <h3>金利の年次変化設定</h3>
-      <p class="note">例: 2, 2.1, 2.2 ... のように年ごとの金利をカンマ区切りで入力</p>
-      <label>第1ローン金利推移 (%):</label>
-      <input type="text" id="loan1Rates" value="2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2"><br>
-      <label>第2ローン金利推移 (%):</label>
-      <input type="text" id="loan2Rates" value=""><br>
-    </div>
-
-    <!-- 家賃・空室率の推移 -->
-    <div class="section">
-      <h2>【収入関連設定】</h2>
-      <label>初年度 満室想定賃料(月):</label>
-      <input type="text" id="monthlyRent" value="300000"><br>
-      <label>その他雑収入（初年度 年額）:</label>
-      <input type="text" id="miscIncome" value="0"><br>
-      <label>空室率推移 (%):</label>
-      <input type="text" id="vacancyRates" value="10,10,10,10,10,10,15,15,15,15"><br>
-      <label>家賃成長率推移 (%):</label>
-      <input type="text" id="rentGrowthRates" value="0,0,0,0,0,0,0,0,0,0"><br>
-      <p class="note">年単位でカンマ区切り入力、最終年以降は最後の値を継続利用</p>
-    </div>
-
-    <!-- 減価償却・税率 -->
-    <div class="section">
-      <h2>【減価償却・税金】</h2>
-      <label>減価償却年数（定額法）:</label>
-      <input type="text" id="depreciationYears" value="47"><br>
-      <p class="note">※築古の場合、実際の耐用年数残りをどう見るかで変わる。簡易的に固定。</p>
-
-      <label>通常所得税率（所得税+住民税）:</label>
-      <input type="text" id="incomeTaxRate" value="20"> %<br>
-      <label>短期譲渡所得税率:</label>
-      <input type="text" id="shortTermCapitalGainsTax" value="39"> %<br>
-      <label>長期譲渡所得税率:</label>
-      <input type="text" id="longTermCapitalGainsTax" value="20"> %<br>
-      <p class="note">※ 保有期間5年超なら長期、以下なら短期とする簡易区分</p>
-    </div>
-
-    <!-- 運営費用 -->
-    <div class="section">
-      <h2>【運営費用設定】</h2>
-      <label>管理費・修繕費（初年度 年額）:</label>
-      <input type="text" id="managementFee" value="300000"><br>
-      <label>固都税（初年度 年額）:</label>
-      <input type="text" id="fixedTax" value="200000"><br>
-      <label>建物管理費（初年度 年額）:</label>
-      <input type="text" id="buildingMgmtFee" value="150000"><br>
-
-      <h3>運営費・税の年次成長率 (%):</h3>
-      <p class="note">例: 2,2,2,2,2 ... のように入力</p>
-      <label>管理費・修繕費成長率:</label>
-      <input type="text" id="mgmtGrowth" value="1,1,1,1,1,1,1,1,1,1"><br>
-      <label>固定資産税成長率:</label>
-      <input type="text" id="fixedTaxGrowth" value="1,1,1,1,1,1,1,1,1,1"><br>
-      <label>建物管理費成長率:</label>
-      <input type="text" id="bldMgmtGrowth" value="1,1,1,1,1,1,1,1,1,1"><br>
-    </div>
-
-    <!-- CAPEX -->
-    <div class="section">
-      <h2>【追加CAPEX設定】</h2>
-      <p class="note">大規模修繕などの追加投資。年数:金額 形式でカンマ区切り</p>
-      <p class="note">例: 3:500000, 5:300000 (3年目に50万円,5年目に30万円)</p>
-      <label>CAPEX一覧:</label>
-      <input type="text" id="capexList" value=""><br>
-    </div>
-
-    <!-- 保有・売却 -->
-    <div class="section">
-      <h2>【保有・売却関連】</h2>
-      <label>保有期間（年）:</label>
-      <input type="text" id="holdingPeriod" value="10"><br>
-      <label>割引率（期待収益率,%）:</label>
-      <input type="text" id="discountRate" value="5"><br>
-      <label>売却価格:</label>
-      <input type="text" id="salePrice" value="60000000"><br>
-      <label>売却諸費用:</label>
-      <input type="text" id="saleExpenses" value="3000000"><br>
-    </div>
-
-    <button type="button" onclick="runSimulation()">シミュレーション開始</button>
-  </form>
-
-  <div id="results"></div>
-
-  <script>
-    // ----------------------------------
-    // 既存のロジック (一部省略なく全載せ)
-    // ----------------------------------
-    function parseRateList(str) {
-      if (!str) return [];
-      return str
-        .split(",")
-        .map(s => parseFloat(s.trim()))
-        .filter(x => !isNaN(x));
-    }
-
-    function parseCapexList(str) {
-      let result = {};
-      if (!str) return result;
-      let items = str.split(",");
-      items.forEach(item => {
-        let parts = item.split(":").map(s => s.trim());
-        if (parts.length === 2) {
-          let year = parseInt(parts[0]);
-          let amount = parseFloat(parts[1]);
-          if (!isNaN(year) && !isNaN(amount)) {
-            result[year] = amount;
-          }
-        }
-      });
-      return result;
-    }
-
-    function formatNumber(num) {
-      if (isNaN(num)) return "";
-      return Math.round(num).toLocaleString();
-    }
-
-    function calcLoanSchedule(loanAmount, loanTerm, yearlyRates, method, simYear) {
-      let schedule = [];
-      let balance = loanAmount;
-      let principalPerYear = (method === "元金均等") ? (loanAmount / loanTerm) : 0;
-
-      for (let y = 0; y < simYear; y++) {
-        if (balance <= 0) {
-          schedule.push({ payment: 0, interest: 0, principal: 0, balance: 0 });
-          continue;
-        }
-        // 金利
-        let rate;
-        if (yearlyRates.length === 0) {
-          // 金利指定がない場合は0%想定
-          rate = 0;
-        } else {
-          rate = (yearlyRates[y] !== undefined)
-            ? (yearlyRates[y]/100)
-            : (yearlyRates[yearlyRates.length-1]/100);
-        }
-
-        if (method === "均等") {
-          let n = loanTerm - y;
-          if (n < 1) n = 1;
-          let payment = balance * (rate * Math.pow(1+rate, n)) / (Math.pow(1+rate, n) - 1);
-          if (payment < 0) payment = 0;
-          let interest = balance * rate;
-          let principal = payment - interest;
-          if (principal > balance) {
-            principal = balance;
-            payment = interest + principal;
-          }
-          balance -= principal;
-          schedule.push({
-            payment,
-            interest,
-            principal,
-            balance: (balance < 0 ? 0 : balance)
-          });
-        } else {
-          // 元金均等
-          let interest = balance * rate;
-          let principal = principalPerYear;
-          if (principal > balance) principal = balance;
-          let payment = interest + principal;
-          balance -= principal;
-          schedule.push({
-            payment,
-            interest,
-            principal,
-            balance: (balance < 0 ? 0 : balance)
-          });
-        }
-      }
-      return schedule;
-    }
-
-    function calculateIRR(cashFlows, guess = 0.1) {
-      const tol = 1e-7;
-      const maxIter = 200;
-      let rate = guess;
-      for (let i = 0; i < maxIter; i++) {
-        let npv = 0;
-        let dNpv = 0;
-        for (let t = 0; t < cashFlows.length; t++) {
-          let denom = Math.pow(1 + rate, t);
-          npv += cashFlows[t] / denom;
-          if (t > 0) {
-            dNpv -= (t * cashFlows[t]) / Math.pow(1 + rate, t+1);
-          }
-        }
-        if (Math.abs(npv) < tol) break;
-        let newRate = rate - npv / dNpv;
-        if (Math.abs(newRate - rate) < tol) {
-          rate = newRate;
-          break;
-        }
-        rate = newRate;
-      }
-      return rate;
-    }
-
-    function calculateNPV(cashFlows, discountRate) {
-      let r = discountRate / 100;
-      let npv = 0;
-      for (let t = 0; t < cashFlows.length; t++) {
-        npv += cashFlows[t] / Math.pow(1 + r, t);
-      }
-      return npv;
-    }
-
-    function runSimulation() {
-      function numVal(id) {
-        return parseFloat(document.getElementById(id).value) || 0;
-      }
-      function intVal(id) {
-        return parseInt(document.getElementById(id).value) || 0;
-      }
-
-      // 基本情報
-      let purchasePrice = numVal("purchasePrice");
-      let purchaseExpenses = numVal("purchaseExpenses");
-      let equity = numVal("equity");
-      let landRatio = numVal("landRatio") / 100;
-      let expenseToBuildingRatio = numVal("expenseToBuildingRatio") / 100;
-
-      // ローン
-      let loan1Amount = numVal("loan1Amount");
-      let loan1Term = intVal("loan1Term");
-      let loan1Type = document.getElementById("loan1Type").value;
-      let loan1Rates = parseRateList(document.getElementById("loan1Rates").value);
-      let loan2Amount = numVal("loan2Amount");
-      let loan2Term = intVal("loan2Term");
-      let loan2Type = document.getElementById("loan2Type").value;
-      let loan2Rates = parseRateList(document.getElementById("loan2Rates").value);
-
-      // 収入関連
-      let monthlyRent = numVal("monthlyRent");
-      let miscIncome = numVal("miscIncome");
-      let vacancyRates = parseRateList(document.getElementById("vacancyRates").value);
-      let rentGrowthRates = parseRateList(document.getElementById("rentGrowthRates").value);
-
-      // 減価償却・税
-      let depreciationYears = intVal("depreciationYears");
-      let incomeTaxRate = numVal("incomeTaxRate") / 100;
-      let shortTermTax = numVal("shortTermCapitalGainsTax") / 100;
-      let longTermTax = numVal("longTermCapitalGainsTax") / 100;
-
-      // 運営費
-      let managementFee = numVal("managementFee");
-      let fixedTax = numVal("fixedTax");
-      let buildingMgmtFee = numVal("buildingMgmtFee");
-      let mgmtGrowth = parseRateList(document.getElementById("mgmtGrowth").value);
-      let fixedTaxGrowth = parseRateList(document.getElementById("fixedTaxGrowth").value);
-      let bldMgmtGrowth = parseRateList(document.getElementById("bldMgmtGrowth").value);
-
-      // CAPEX
-      let capexList = parseCapexList(document.getElementById("capexList").value);
-
-      // 保有・売却
-      let holdingPeriod = intVal("holdingPeriod");
-      let discountRate = numVal("discountRate");
-      let salePrice = numVal("salePrice");
-      let saleExpenses = numVal("saleExpenses");
-
-      // 1. 建物コスト等
-      let buildingCost = (purchasePrice * (1 - landRatio));
-      let buildingCostFromExpenses = purchaseExpenses * expenseToBuildingRatio;
-      let totalBuildingBasis = buildingCost + buildingCostFromExpenses;
-      let annualDepreciation = totalBuildingBasis / depreciationYears;
-
-      // 2. ローン返済スケジュール
-      let loan1Schedule = calcLoanSchedule(loan1Amount, loan1Term, loan1Rates, loan1Type, holdingPeriod);
-      let loan2Schedule = calcLoanSchedule(loan2Amount, loan2Term, loan2Rates, loan2Type, holdingPeriod);
-
-      // 3. 各年CF
-      let yearResults = [];
-      let btcfCashFlows = [-equity];
-      let atcfCashFlows = [-equity];
-
-      for (let y = 1; y <= holdingPeriod; y++) {
-        let idx = y - 1;
-        let growthRate = (idx < rentGrowthRates.length)
-          ? rentGrowthRates[idx]/100
-          : rentGrowthRates[rentGrowthRates.length - 1]/100;
-        let rentThisYear = monthlyRent * Math.pow(1 + growthRate, idx);
-
-        let vacancyRate = (idx < vacancyRates.length)
-          ? vacancyRates[idx]/100
-          : vacancyRates[vacancyRates.length - 1]/100;
-
-        let mgmtInc = (idx < mgmtGrowth.length)
-          ? mgmtGrowth[idx]/100
-          : mgmtGrowth[mgmtGrowth.length - 1]/100;
-        let fixTaxInc = (idx < fixedTaxGrowth.length)
-          ? fixedTaxGrowth[idx]/100
-          : fixedTaxGrowth[fixedTaxGrowth.length - 1]/100;
-        let bldMgmtInc = (idx < bldMgmtGrowth.length)
-          ? bldMgmtGrowth[idx]/100
-          : bldMgmtGrowth[bldMgmtGrowth.length - 1]/100;
-
-        let mgmtFeeThisYear = managementFee * Math.pow(1 + mgmtInc, idx);
-        let fixedTaxThisYear = fixedTax * Math.pow(1 + fixTaxInc, idx);
-        let bldMgmtThisYear = buildingMgmtFee * Math.pow(1 + bldMgmtInc, idx);
-
-        let annualRent = rentThisYear * 12;
-        let effectiveGrossIncome = annualRent * (1 - vacancyRate) + (y === 1 ? miscIncome : 0);
-        let opEx = mgmtFeeThisYear + fixedTaxThisYear + bldMgmtThisYear;
-        let NOI = effectiveGrossIncome - opEx;
-
-        let ads = (loan1Schedule[idx].payment || 0) + (loan2Schedule[idx].payment || 0);
-        let interestTotal = (loan1Schedule[idx].interest || 0) + (loan2Schedule[idx].interest || 0);
-
-        let capex = capexList[y] || 0;
-        let BTCF = NOI - ads - capex;
-
-        let taxableIncome = NOI - (interestTotal + annualDepreciation);
-        if (taxableIncome < 0) taxableIncome = 0;
-        let tax = taxableIncome * incomeTaxRate;
-
-        let ATCF = BTCF - tax;
-
-        yearResults.push({
-          year: y,
-          vacancyRate: vacancyRate,
-          rentThisYear: rentThisYear,
-          effectiveGrossIncome,
-          opEx,
-          NOI,
-          ads,
-          interestTotal,
-          capex,
-          BTCF,
-          taxableIncome,
-          tax,
-          ATCF,
-          loanBalance: loan1Schedule[idx].balance + loan2Schedule[idx].balance
-        });
-
-        btcfCashFlows.push(BTCF);
-        atcfCashFlows.push(ATCF);
-      }
-
-      // 4. 売却時
-      let lastIndex = holdingPeriod - 1;
-      let remainLoanBalance = (loan1Schedule[lastIndex].balance || 0) + (loan2Schedule[lastIndex].balance || 0);
-
-      let usedDep = annualDepreciation * holdingPeriod;
-      if (usedDep > totalBuildingBasis) usedDep = totalBuildingBasis;
-      let buildingBasisRemaining = totalBuildingBasis - usedDep;
-      let landCost = (purchasePrice * landRatio) + (purchaseExpenses * (1 - expenseToBuildingRatio));
-      let totalBasisRemaining = buildingBasisRemaining + landCost;
-      let capitalGain = salePrice - (saleExpenses + totalBasisRemaining);
-      if (capitalGain < 0) capitalGain = 0;
-
-      let cGainTaxRate = (holdingPeriod > 5) ? longTermTax : shortTermTax;
-      let capitalGainTax = capitalGain * cGainTaxRate;
-      let saleNetAfterTax = salePrice - saleExpenses - remainLoanBalance - capitalGainTax;
-      let saleNetBeforeTax = salePrice - saleExpenses - remainLoanBalance;
-
-      btcfCashFlows[btcfCashFlows.length - 1] += saleNetBeforeTax;
-      atcfCashFlows[atcfCashFlows.length - 1] += saleNetAfterTax;
-
-      yearResults[holdingPeriod - 1].BTCF += saleNetBeforeTax;
-      yearResults[holdingPeriod - 1].ATCF += saleNetAfterTax;
-
-      // 5. IRR・NPV
-      let irrBefore = calculateIRR(btcfCashFlows);
-      let irrAfter = calculateIRR(atcfCashFlows);
-      let npvAfter = calculateNPV(atcfCashFlows, discountRate);
-
-      // 累計ATCF
-      let totalATCF = 0;
-      for (let i = 1; i < atcfCashFlows.length; i++) {
-        totalATCF += atcfCashFlows[i];
-      }
-
-      // 画面表示作成
-      let resultHTML = "";
-
-      // (A) わかりやすい最終まとめ
-      let totalInvestment = purchasePrice + purchaseExpenses; // 物件購入+諸費用
-      let finalProfit = totalATCF - equity; // 投下資本との比較
-      let multiple = 1 + (finalProfit / equity);
-
-      resultHTML += `
-        <h2>シミュレーション結果サマリー</h2>
-        <div class="summary-box">
-          <p><span class="highlight">◆ 物件購入時の総投資額</span>: ${formatNumber(totalInvestment)} 円</p>
-          <p><span class="highlight">◆ 最終売却時の手取り（税引後）</span>: ${formatNumber(saleNetAfterTax)} 円</p>
-          <p><span class="highlight">◆ 累計税引後キャッシュフロー</span>: ${formatNumber(totalATCF)} 円 
-            （うち初期自己資金: ${formatNumber(equity)} 円）</p>
-          <p><span class="highlight">◆ 税引後IRR</span>: ${(irrAfter*100).toFixed(2)} %</p>
-          <p><span class="highlight">◆ 税引前IRR</span>: ${(irrBefore*100).toFixed(2)} %</p>
-          <p><span class="highlight">◆ 税引後NPV（割引率:${discountRate}%）</span>: ${formatNumber(npvAfter)} 円</p>
-          <p><span class="highlight">◆ 自己資金倍率（累計ATCF ÷ 自己資金）</span>:
-            ${multiple.toFixed(2)} 倍 （投下資本に対して約 ${(multiple*100 - 100).toFixed(1)}% のリターン）</p>
+    <div class="container">
+        <h1>不動産賃貸物件収益シミュレーター</h1>
+        
+        <div class="card">
+            <h2>物件情報入力</h2>
+            <form id="propertyForm">
+                <!-- 物件基本情報 -->
+                <div class="form-section">
+                    <h3>物件基本情報</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="propertyName">物件名</label>
+                            <input type="text" id="propertyName" placeholder="例: ○○マンション">
+                        </div>
+                        <div class="form-group">
+                            <label for="propertyType">物件タイプ</label>
+                            <select id="propertyType">
+                                <option value="apartment">マンション</option>
+                                <option value="house">一戸建て</option>
+                                <option value="land">土地</option>
+                                <option value="commercial">商業施設</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="purchaseYear">購入年</label>
+                            <input type="number" id="purchaseYear" min="1900" max="2100" value="2025">
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="totalPrice">購入価格 (円)
+                                <span class="tooltip">
+                                    <span class="info-icon">?</span>
+                                    <span class="tooltip-text">物件の総購入価格を入力してください。</span>
+                                </span>
+                            </label>
+                            <input type="number" id="totalPrice" min="0" value="50000000">
+                        </div>
+                        <div class="form-group">
+                            <label for="buildingRatio">建物の割合 (%)</label>
+                            <input type="number" id="buildingRatio" min="0" max="100" value="70">
+                        </div>
+                        <div class="form-group">
+                            <label for="landRatio">土地の割合 (%)</label>
+                            <input type="number" id="landRatio" min="0" max="100" value="30" disabled>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="buildingAge">築年数 (年)</label>
+                            <input type="number" id="buildingAge" min="0" max="100" value="10">
+                        </div>
+                        <div class="form-group">
+                            <label for="buildingArea">建物面積 (㎡)</label>
+                            <input type="number" id="buildingArea" min="0" value="70">
+                        </div>
+                        <div class="form-group">
+                            <label for="landArea">土地面積 (㎡)</label>
+                            <input type="number" id="landArea" min="0" value="120">
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 購入時諸経費 -->
+                <div class="form-section">
+                    <h3>購入時諸経費</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="brokerageRate">仲介手数料率 (%)</label>
+                            <input type="number" id="brokerageRate" min="0" max="100" step="0.01" value="3.3">
+                        </div>
+                        <div class="form-group">
+                            <label for="registrationTax">登録免許税 (円)
+                                <span class="tooltip">
+                                    <span class="info-icon">?</span>
+                                    <span class="tooltip-text">建物0.4%、土地1.5%が一般的です</span>
+                                </span>
+                            </label>
+                            <input type="number" id="registrationTax" min="0" value="500000">
+                        </div>
+                        <div class="form-group">
+                            <label for="acquisitionTax">不動産取得税 (%)
+                                <span class="tooltip">
+                                    <span class="info-icon">?</span>
+                                    <span class="tooltip-text">土地・住宅は3%、それ以外は4%です</span>
+                                </span>
+                            </label>
+                            <input type="number" id="acquisitionTax" min="0" max="100" step="0.1" value="3">
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="stampDuty">印紙税 (円)</label>
+                            <input type="number" id="stampDuty" min="0" value="30000">
+                        </div>
+                        <div class="form-group">
+                            <label for="legalFees">司法書士報酬 (円)</label>
+                            <input type="number" id="legalFees" min="0" value="100000">
+                        </div>
+                        <div class="form-group">
+                            <label for="otherInitialCosts">その他初期費用 (円)</label>
+                            <input type="number" id="otherInitialCosts" min="0" value="200000">
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- ローン情報 -->
+                <div class="form-section">
+                    <h3>ローン情報</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="loanAmount">借入額 (円)</label>
+                            <input type="number" id="loanAmount" min="0" value="40000000">
+                        </div>
+                        <div class="form-group">
+                            <label for="loanInterestRate">金利 (%)</label>
+                            <input type="number" id="loanInterestRate" min="0" max="100" step="0.01" value="1.5">
+                        </div>
+                        <div class="form-group">
+                            <label for="loanTerm">返済期間 (年)</label>
+                            <input type="number" id="loanTerm" min="1" max="50" value="30">
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="repaymentType">返済方法</label>
+                            <select id="repaymentType">
+                                <option value="equal">元利均等返済</option>
+                                <option value="principal">元金均等返済</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="initialExpenses">諸費用 (円)
+                                <span class="tooltip">
+                                    <span class="info-icon">?</span>
+                                    <span class="tooltip-text">保証料、手数料など</span>
+                                </span>
+                            </label>
+                            <input type="number" id="initialExpenses" min="0" value="500000">
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 収入情報 -->
+                <div class="form-section">
+                    <h3>収入情報</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="monthlyRent">月額家賃 (円)</label>
+                            <input type="number" id="monthlyRent" min="0" value="150000">
+                        </div>
+                        <div class="form-group">
+                            <label for="managementFeeIncome">月額管理費収入 (円)</label>
+                            <input type="number" id="managementFeeIncome" min="0" value="5000">
+                        </div>
+                        <div class="form-group">
+                            <label for="otherIncome">その他収入 (円/月)</label>
+                            <input type="number" id="otherIncome" min="0" value="2000">
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="vacancyRate">空室率 (%)</label>
+                            <input type="number" id="vacancyRate" min="0" max="100" step="0.1" value="5">
+                        </div>
+                        <div class="form-group">
+                            <label for="rentIncreaseRate">家賃上昇率 (%/年)</label>
+                            <input type="number" id="rentIncreaseRate" min="-10" max="10" step="0.1" value="0">
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 運営コスト情報 -->
+                <div class="form-section">
+                    <h3>運営コスト情報</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="propertyTaxRate">固定資産税率 (%)</label>
+                            <input type="number" id="propertyTaxRate" min="0" max="100" step="0.01" value="1.4">
+                        </div>
+                        <div class="form-group">
+                            <label for="monthlyManagementFee">月額管理費 (円)</label>
+                            <input type="number" id="monthlyManagementFee" min="0" value="10000">
+                        </div>
+                        <div class="form-group">
+                            <label for="repairReserve">修繕積立金 (円/月)</label>
+                            <input type="number" id="repairReserve" min="0" value="15000">
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="insuranceCost">保険料 (円/年)</label>
+                            <input type="number" id="insuranceCost" min="0" value="30000">
+                        </div>
+                        <div class="form-group">
+                            <label for="otherCosts">その他経費 (円/月)</label>
+                            <input type="number" id="otherCosts" min="0" value="5000">
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 減価償却・税金設定 -->
+                <div class="form-section">
+                    <h3>減価償却・税金設定</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="depreciationPeriod">減価償却期間 (年)
+                                <span class="tooltip">
+                                    <span class="info-icon">?</span>
+                                    <span class="tooltip-text">木造22年、鉄骨造34年、RC造47年が一般的</span>
+                                </span>
+                            </label>
+                            <input type="number" id="depreciationPeriod" min="1" max="100" value="47">
+                        </div>
+                        <div class="form-group">
+                            <label for="incomeTaxRate">所得税率 (%)
+                                <span class="tooltip">
+                                    <span class="info-icon">?</span>
+                                    <span class="tooltip-text">個人の所得税率を入力してください</span>
+                                </span>
+                            </label>
+                            <input type="number" id="incomeTaxRate" min="0" max="100" step="0.1" value="20">
+                        </div>
+                        <div class="form-group">
+                            <label for="residentTaxRate">住民税率 (%)</label>
+                            <input type="number" id="residentTaxRate" min="0" max="100" step="0.1" value="10">
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="ownershipYears">所有予定期間 (年)</label>
+                            <input type="number" id="ownershipYears" min="1" max="100" value="20">
+                        </div>
+                        <div class="form-group">
+                            <label for="expectedSellingPrice">想定売却価格 (円)</label>
+                            <input type="number" id="expectedSellingPrice" min="0" value="45000000">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="button-container">
+                    <button type="button" id="calculateButton">収益性を計算する</button>
+                </div>
+            </form>
         </div>
-      `;
-
-      // (B) 詳細年次テーブル
-      resultHTML += `<h2>詳細 年次キャッシュフロー一覧</h2>
-      <table>
-        <tr>
-          <th>年</th>
-          <th>実効総収入(EGI)</th>
-          <th>運営費(OpEx)</th>
-          <th>NOI</th>
-          <th>返済(ADS)</th>
-          <th>CAPEX</th>
-          <th>税引前CF(BTCF)</th>
-          <th>税金</th>
-          <th>税引後CF(ATCF)</th>
-          <th>ローン残高</th>
-        </tr>`;
-
-      yearResults.forEach(r => {
-        resultHTML += `
-          <tr>
-            <td>${r.year}</td>
-            <td>${formatNumber(r.effectiveGrossIncome)}</td>
-            <td>${formatNumber(r.opEx)}</td>
-            <td>${formatNumber(r.NOI)}</td>
-            <td>${formatNumber(r.ads)}</td>
-            <td>${formatNumber(r.capex)}</td>
-            <td>${formatNumber(r.BTCF)}</td>
-            <td>${formatNumber(r.tax)}</td>
-            <td>${formatNumber(r.ATCF)}</td>
-            <td>${formatNumber(r.loanBalance)}</td>
-          </tr>
-        `;
-      });
-      resultHTML += `</table>`;
-
-      // (C) 売却時の内訳など（補足）
-      resultHTML += `
-        <h3>売却時の内訳</h3>
-        <ul>
-          <li>売却価格: ${formatNumber(salePrice)} 円</li>
-          <li>売却諸費用: ${formatNumber(saleExpenses)} 円</li>
-          <li>ローン残高: ${formatNumber(remainLoanBalance)} 円</li>
-          <li>譲渡所得: ${formatNumber(capitalGain)} 円</li>
-          <li>譲渡所得税: ${formatNumber(capitalGainTax)} 円</li>
-          <li>最終手取り(税引後): ${formatNumber(saleNetAfterTax)} 円</li>
-        </ul>
-      `;
-
-      // (D) 注意書き
-      resultHTML += `
-        <p class="note">
-          ※本シミュレーションは年次ベースの概算モデルです。実際の借入条件（毎月返済・変動金利など）や税務上の特例等を厳密に反映していない場合があります。<br>
-          不動産投資に関する最終的な判断は、ご自身の責任において専門家などの助言を得ながら行ってください。
-        </p>
-      `;
-
-      document.getElementById("results").innerHTML = resultHTML;
-    }
-  </script>
-</body>
-</html>
+        
+        <!-- 結果表示エリア -->
+        <div class="card result-section" id="resultSection">
+            <h2>収益性分析結果</h2>
+            
+            <div class="result-grid">
+                <div class="result-item">
+                    <div class="result-label">初期投資総額</div>
+                    <div class="result-value" id="totalInvestment">-</div>
+                </div>
+                <div class="result-item">
+                    <div class="result-label">表面利回り</div>
+                    <div class="result-value" id="grossYield">-</div>
+                </div>
+                <div class="result-item">
+                    <div class="result-label">実質利回り</div>
+                    <div class="result-value" id="netYield">-</div>
+                </div>
+                <div class="result-item">
+                    <div class="result-label">年間収入</div>
+                    <div class="result-value" id="annualIncome">-</div>
+                </div>
+                <div class="result-item">
+                    <div class="result-label">年間経費</div>
+                    <div class="result-value" id="annualExpenses">-</div>
+                </div>
+                <div class="result-item">
+                    <div class="result-label">年間キャッシュフロー</div>
+                    <div class="result-value" id="annualCashFlow">-</div>
+                </div>
+                <div class="result-item">
+                    <div class="result-label">減価償却費 (年間)</div>
+                    <div class="result-value" id="annualDepreciation">-</div>
+                </div>
+                <div class="result-item">
+                    <div class="result-label">課税所得 (年間)</div>
+                    <div class="result-value" id="taxableIncome">-</div>
+                </div>
+                <div class="result-item">
+                    <div class="result-label">所得税・住民税 (年間)</div>
+                    <div class="result-value" id="incomeTax">-</div>
+                </div>
+                <div class="result-item">
+                    <div class="result-label">税引後CF (年間)</div>
+                    <div class="result-value" id="afterTaxCashFlow">-</div>
+                </div>
+                <div class="result-item">
+                    <div class="result-label">投資回収期間</div>
+                    <div class="result-value" id="paybackPeriod">-</div>
+                </div>
+                <div class="result-item">
+                    <div class="result-label">ROI</div>
+                    <div class="result-value" id="roi">-</div>
+                </div>
+            </div>
+            
+            <div class="tab-container">
+                <div class="tab-buttons">
+                    <button class="tab-button active" data-tab="cashFlow">キャッシュフロー分析</button>
+                    <button class="tab-button" data-tab="loan">ローン返済表</button>
+                    <button class="tab-button" data-tab="taxDetails">税金詳細</button>
+                    <button class="tab-button" data-tab="profitLoss">収支計算書</button>
+                </div>
+                
+                <div class="tab-content active" id="cashFlowTab">
+                    <h3>年次キャッシュフロー推移</h3>
+                    <div class="chart-container" id="cashFlowChart"></div>
+                    <table id="cashFlowTable">
+                        <thead>
+                            <tr>
+                                <th>年</th>
+                                <th>収入</th>
+                                <th>経費</th>
+                                <th>ローン返済</th>
+                                <th>税金</th>
+                                <th>キャッシュフロー</th>
+                                <th>累計CF</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+                
+                <div class="tab-content" id="loanTab">
+                    <h3>ローン返済スケジュール</h3>
+                    <table id="loanTable">
+                        <thead>
+                            <tr>
+                                <th>年</th>
+                                <th>元金返済</th>
+                                <th>利息支払</th>
+                                <th>年間返済額</th>
+                                <th>残債</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+                
+                <div class="tab-content" id="taxDetailsTab">
+                    <h3>税金詳細</h3>
+                    <table id="taxTable">
+                        <thead>
+                            <tr>
+                                <th>年</th>
+                                <th>年間収入</th>
+                                <th>減価償却費</th>
+                                <th>経費</th>
+                                <th>利息</th>
+                                <th>課税所得</th>
+                                <th>所得税</th>
+                                <th>住民税</th>
+                                <th>固定資産税</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+                
+                <div class="tab-content" id="profitLossTab">
+                    <h3>収支計算書</h3>
+                    <table id="profitLossTable">
+                        <thead>
+                            <tr>
+                                <th>項目</th>
+                                <th>年間金額 (円)</th>
+                                <th>備考</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 建物と土地の割合の連動
+            const buildingRatioInput = document.getElementById('buildingRatio');
+            const landRatioInput = document.getElementById('landRatio');
+            
+            buildingRatioInput.addEventListener('input', function() {
+                const buildingRatio = parseFloat(this.value) || 0;
+                landRatioInput.value = Math.max(0, 100 - buildingRatio).toFixed(1);
+            });
+            
+            // タブ切り替え
+            const tabButtons = document.querySelectorAll('.tab-button');
+            const tabContents = document.querySelectorAll('.tab-content');
+            
+            tabButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const tabId = this.getAttribute('data-tab');
+                    
+                    tabButtons.forEach(btn => btn.classList.remove('active'));
+                    tabContents.forEach(content => content.classList.remove('active'));
+                    
+                    this.classList.add('active');
+                    document.getElementById(tabId + 'Tab').classList.add('active');
+                });
+            });
+            
+            // 計算ボタンのイベントリスナー
+            document.getElementById('calculateButton').addEventListener('click', calculateResults);
+            
+            // メインの計算関数
+            function calculateResults() {
+                // 入力値の取得
+                const inputs = getInputValues();
+                
+                // 初期投資額の計算
+                const initialInvestment = calculateInitialInvestment(inputs);
+                
+                // ローン返済の計算
+                const loanSchedule = calculateLoanSchedule(inputs);
+                
+                // 収入と経費の計算
+                const incomeAndExpenses = calculateIncomeAndExpenses(inputs);
+                
+                // 減価償却の計算
+                const depreciation = calculateDepreciation(inputs);
+                
+                // 税金の計算
+                const taxes = calculateTaxes(inputs, incomeAndExpenses, depreciation, loanSchedule);
+                
+                // キャッシュフローの計算
+                const cashFlow = calculateCashFlow(inputs, incomeAndExpenses, loanSchedule, taxes);
+                
+                // 利回りとROIの計算
+                const returns = calculateReturns(inputs, incomeAndExpenses, cashFlow, initialInvestment);
+                
+                // 結果の表示
+                displayResults(initialInvestment, incomeAndExpenses, loanSchedule, depreciation, taxes, cashFlow, returns);
+                
+                // 結果セクションを表示
+                document.getElementById('resultSection').style.display = 'block';
+                
+                // 結果までスクロール
+                document.getElementById('resultSection').scrollIntoView({behavior: 'smooth'});
+            }
+            
+            // 入力値の取得関数
+            function getInputValues() {
+                return {
+                    propertyName: document.getElementById('propertyName').value,
+                    propertyType: document.getElementById('propertyType').value,
+                    purchaseYear: parseInt(document.getElementById('purchaseYear').value) || 2025,
+                    totalPrice: parseFloat(document.getElementById('totalPrice').value) || 0,
+                    buildingRatio: parseFloat(document.getElementById('buildingRatio').value
